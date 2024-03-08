@@ -1,4 +1,7 @@
-const squareStatusMap = {
+import { GRID_SIDE_LENGTH } from "../config/initialConfig";
+import { Coord, Matrix, Row, SquareStatus } from "../types/board.types";
+
+const SQUARE_STATUS_MAP = {
   neutral: 0,
   start: 1,
   end: 2,
@@ -7,7 +10,7 @@ const squareStatusMap = {
   path: 5,
 };
 
-function makeMatrixFromArray(array: number[], rowLength: number) {
+function makeMatrixFromArray(array: Row, rowLength: Coord) {
   return array.reduce(
     (acc, el, idx) => {
       if (idx % rowLength === 0 && idx) {
@@ -22,15 +25,15 @@ function makeMatrixFromArray(array: number[], rowLength: number) {
 
       return acc;
     },
-    { currentRow: 0, matrix: [] as number[][] }
+    { currentRow: 0, matrix: [] as Matrix }
   ).matrix;
 }
-const initialArray = Array(900).fill(0);
+const initialArray = Array(GRID_SIDE_LENGTH ** 2).fill(0);
 
-const initialMatrix = makeMatrixFromArray(initialArray, 30);
+const initialMatrix = makeMatrixFromArray(initialArray, GRID_SIDE_LENGTH);
 
-function getBackgroundColor({ status }: { status: number }) {
-  switch (status) {
+function getBackgroundColor({ $status }: { $status: SquareStatus }) {
+  switch ($status) {
     case 0:
       return "gray";
     case 1:
@@ -40,4 +43,4 @@ function getBackgroundColor({ status }: { status: number }) {
   }
 }
 
-export { squareStatusMap, initialMatrix, getBackgroundColor };
+export { SQUARE_STATUS_MAP, initialMatrix, getBackgroundColor };

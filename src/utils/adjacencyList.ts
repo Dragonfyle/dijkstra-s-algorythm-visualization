@@ -1,17 +1,23 @@
-import { squareStatusMap } from "../components/Board.utils";
+import { SQUARE_STATUS_MAP } from "../components/Board.utils";
+import { Matrix, StringifiedVector, Vector } from "../types/board.types";
 
-function stringifyVector([row, col]: number[]) {
-  return `row${row}col${col}`;
+function stringifyVector([row, col]: Vector) {
+  const stringifiedVector: StringifiedVector = `row${row}col${col}`;
+
+  return stringifiedVector;
 }
 
-function parseVector(string) {
+function parseVector(string: StringifiedVector) {
   const matches = string.match(/\d+/g);
+  if (!matches) {
+    throw new Error("incorrect String format. Should be: 'row##col##'");
+  }
   const shape = matches.map(Number);
 
   return shape;
 }
 
-function checkNeighbors(boardMatrix: number[][], [row, col]: [number, number]) {
+function checkNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
   const unitVectors = {
     left: [-1, 0],
     right: [1, 0],
@@ -20,22 +26,22 @@ function checkNeighbors(boardMatrix: number[][], [row, col]: [number, number]) {
   };
 
   const addedVectors = {
-    left: [row + unitVectors.left[0], col + unitVectors.left[1]],
-    right: [row + unitVectors.right[0], col + unitVectors.right[1]],
-    up: [row + unitVectors.up[0], col + unitVectors.up[1]],
-    down: [row + unitVectors.down[0], col + unitVectors.down[1]],
+    left: [row + unitVectors.left[0], col + unitVectors.left[1]] as Vector,
+    right: [row + unitVectors.right[0], col + unitVectors.right[1]] as Vector,
+    up: [row + unitVectors.up[0], col + unitVectors.up[1]] as Vector,
+    down: [row + unitVectors.down[0], col + unitVectors.down[1]] as Vector,
   };
 
-  const neighbors = new Map<string, number>();
+  const neighbors = new Map<StringifiedVector, number>();
 
   for (const vector in addedVectors) {
-    const [row, col] = addedVectors[vector] as [number, number];
+    const [row, col] = addedVectors[vector as keyof typeof addedVectors];
 
     if (!isVectorWithinBounds([row, col])) {
       continue;
     }
 
-    if (boardMatrix[row][col] === squareStatusMap.off) {
+    if (boardMatrix[row][col] === SQUARE_STATUS_MAP.off) {
       continue;
     } else {
       neighbors.set(
@@ -48,18 +54,21 @@ function checkNeighbors(boardMatrix: number[][], [row, col]: [number, number]) {
   return neighbors;
 }
 
-function isVectorWithinBounds(vector: number[]) {
+function isVectorWithinBounds(vector: Vector) {
   return vector.every((coord) => coord >= 0 && coord <= 29);
 }
 
-function getAdjacencyList(boardMatrix: number[][]) {
-  const gridAdjacencyList = new Map<string, Map<[number, number], number>>();
+function getAdjacencyList(boardMatrix: Matrix) {
+  const gridAdjacencyList = new Map<
+    StringifiedVector,
+    Map<StringifiedVector, number>
+  >();
 
   boardMatrix.map((row, rowIdx) =>
     row.map((_, colIdx) =>
       gridAdjacencyList.set(
-        `row${rowIdx}col${colIdx}`,
-        checkNeighbors(boardMatrix, [rowIdx, colIdx])
+        stringifyVector([rowIdx, colIdx] as Vector),
+        checkNeighbors(boardMatrix, [rowIdx, colIdx] as Vector)
       )
     )
   );
@@ -67,4 +76,4 @@ function getAdjacencyList(boardMatrix: number[][]) {
   return gridAdjacencyList;
 }
 
-export { getAdjacencyList };
+export { getAdjacencyList, parseVector, stringifyVector };

@@ -1,18 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { initialMatrix, squareStatusMap } from "./Board.utils";
-import * as P from "./Board.parts";
+import React, { useEffect, useRef, useState } from "react";
+import { initialMatrix, SQUARE_STATUS_MAP } from "./Board.utils";
 import { DEFAULT_END_POS, DEFAULT_START_POS } from "../config/initialConfig";
 import { getAdjacencyList } from "../utils/adjacencyList";
+import { Matrix, OnOff, StartEnd, Vector } from "../types/board.types";
+import * as P from "./Board.parts";
 
 export default function Board() {
-  const [matrix, setMatrix] = useState(initialMatrix);
-  const start = useRef<number[]>(DEFAULT_START_POS);
-  const end = useRef<number[]>(DEFAULT_END_POS);
+  const [matrix, setMatrix] = useState<Matrix>(initialMatrix);
+  const start = useRef<Vector>(DEFAULT_START_POS);
+  const end = useRef<Vector>(DEFAULT_END_POS);
+  const adjacencyList = useRef(getAdjacencyList(matrix));
 
-  const adjacencyList = useMemo(() => getAdjacencyList(matrix), []);
-  console.log(adjacencyList);
-
-  function setStartEndPos(row: number, col: number, method: "start" | "end") {
+  function setStartEndPos([row, col]: Vector, method: StartEnd) {
     const reverseRefMap = {
       start: end.current,
       end: start.current,
@@ -26,16 +25,12 @@ export default function Board() {
     updateMatrixStartEnd([row, col], method);
   }
 
-  function toggleSquare(rowIdx: number, colIdx: number) {
-    updateMatrixBlockStatus([rowIdx, colIdx]);
-  }
-
-  function updateMatrixStartEnd(array: number[], method: "end" | "start") {
+  function updateMatrixStartEnd(array: Vector, method: StartEnd) {
     const refMap = {
       start: start.current,
       end: end.current,
     };
-    const status = squareStatusMap[method];
+    const status = SQUARE_STATUS_MAP[method];
     const [row, col] = array;
     const [prevRow, prevCol] = refMap[method];
 
@@ -51,55 +46,69 @@ export default function Board() {
       : (start.current = [row, col]);
   }
 
-  function handleLeftClick(
-    e: React.MouseEvent,
-    rowIdx: number,
-    colIdx: number
-  ) {
+  function handleMouseOver(e: React.MouseEvent, [rowIdx, colIdx]: Vector) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.buttons === 1) {
+      if (e.ctrlKey) {
+        setSquaresOnOff([rowIdx, colIdx], "off");
+      } else if (e.shiftKey) {
+        setSquaresOnOff([rowIdx, colIdx], "on");
+      }
+    }
+  }
+
+  function handleLeftClick(e: React.MouseEvent, [rowIdx, colIdx]: Vector) {
     e.preventDefault();
     e.stopPropagation();
 
     if (e.ctrlKey) {
-      toggleSquare(rowIdx, colIdx);
+      setSquaresOnOff([rowIdx, colIdx], "off");
+    } else if (e.shiftKey) {
+      setSquaresOnOff([rowIdx, colIdx], "on");
     } else {
-      setStartEndPos(rowIdx, colIdx, "start");
+      setStartEndPos([rowIdx, colIdx], "start");
     }
   }
 
-  function handleRightClick(
-    e: React.MouseEvent,
-    rowIdx: number,
-    colIdx: number
-  ) {
+  function handleRightClick(e: React.MouseEvent, [rowIdx, colIdx]: Vector) {
     e.preventDefault();
     e.stopPropagation();
 
-    setStartEndPos(rowIdx, colIdx, "end");
+    setStartEndPos([rowIdx, colIdx], "end");
   }
 
-  function updateMatrixBlockStatus(array: number[]) {
+  function setSquaresOnOff(array: Vector, method: OnOff) {
     const [row, col] = array;
 
     setMatrix((prev) => {
+      if (prev[row][col] !== 3 && prev[row][col] !== 0) {
+        return prev;
+      }
       const previous = JSON.parse(JSON.stringify(prev));
-      previous[row][col] =
-        previous[row][col] === squareStatusMap.off
-          ? squareStatusMap.neutral
-          : squareStatusMap.off;
+
+      previous[row][col] = previous[row][col] =
+        method === "off" ? SQUARE_STATUS_MAP.off : SQUARE_STATUS_MAP.neutral;
+
+      adjacencyList.current = getAdjacencyList(previous);
 
       return previous;
     });
   }
 
-  function renderGrid(renderableMatrix: number[][]) {
+  function renderGrid(renderableMatrix: Matrix) {
     return renderableMatrix.map((row, rowIdx) =>
       row
         .map((element, colIdx) => (
           <P.Square
             key={`${rowIdx}${colIdx}`}
-            status={element}
-            onClick={(e) => handleLeftClick(e, rowIdx, colIdx)}
-            onContextMenu={(e) => handleRightClick(e, rowIdx, colIdx)}
+            $status={element}
+            onClick={(e) => handleLeftClick(e, [rowIdx, colIdx] as Vector)}
+            onMouseOver={(e) => handleMouseOver(e, [rowIdx, colIdx] as Vector)}
+            onContextMenu={(e) =>
+              handleRightClick(e, [rowIdx, colIdx] as Vector)
+            }
           />
         ))
         .flat()
