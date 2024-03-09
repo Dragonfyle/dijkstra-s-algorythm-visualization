@@ -77,7 +77,6 @@ export default function useDijkstras({
 
               return previous;
             });
-
             await delay(1);
           }
         }

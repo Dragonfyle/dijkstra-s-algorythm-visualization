@@ -1,4 +1,4 @@
-import { GRID_SIDE_LENGTH } from "../config/initialConfig";
+import { CONFIGURATION } from "../config/initialConfig";
 import { Coord, Matrix, Row, SquareStatus } from "../types/board.types";
 
 const SQUARE_STATUS_MAP = {
@@ -28,24 +28,27 @@ function makeMatrixFromArray(array: Row, rowLength: Coord) {
     { currentRow: 0, matrix: [] as Matrix }
   ).matrix;
 }
-const initialArray = Array(GRID_SIDE_LENGTH ** 2).fill(0);
+const initialArray = Array(CONFIGURATION.NUM_SQUARES ** 2).fill(0);
 
-const initialMatrix = makeMatrixFromArray(initialArray, GRID_SIDE_LENGTH);
+const initialMatrix = makeMatrixFromArray(
+  initialArray,
+  CONFIGURATION.NUM_SQUARES
+);
 
-function getBackgroundColor({ $status }: { $status: SquareStatus }) {
-  switch ($status) {
+function getBackgroundColor({ status }: { status: SquareStatus }) {
+  switch (status) {
     case 0:
-      return "darkgray";
+      return CONFIGURATION.STATUS_COLORS[0];
     case 1:
-      return "seagreen";
+      return CONFIGURATION.STATUS_COLORS[1];
     case 2:
-      return "red";
+      return CONFIGURATION.STATUS_COLORS[2];
     case 3:
-      return "gray";
+      return CONFIGURATION.STATUS_COLORS[3];
     case 4:
-      return "blue";
+      return CONFIGURATION.STATUS_COLORS[4];
     case 5:
-      return "blue";
+      return CONFIGURATION.STATUS_COLORS[5];
   }
 }
 

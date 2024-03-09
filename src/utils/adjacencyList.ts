@@ -1,5 +1,5 @@
 import { SQUARE_STATUS_MAP } from "../components/Board.utils";
-import { GRID_SIDE_LENGTH } from "../config/initialConfig";
+import { CONFIGURATION } from "../config/initialConfig";
 import {
   AdjacencyList,
   Matrix,
@@ -61,7 +61,9 @@ function getNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
 }
 
 function isVectorWithinBounds(vector: Vector) {
-  return vector.every((coord) => coord >= 0 && coord <= GRID_SIDE_LENGTH - 1);
+  return vector.every(
+    (coord) => coord >= 0 && coord <= CONFIGURATION.NUM_SQUARES - 1
+  );
 }
 
 function getAdjacencyList(boardMatrix: Matrix) {

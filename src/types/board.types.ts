@@ -1,4 +1,4 @@
-import { GRID_SIDE_LENGTH } from "../config/initialConfig";
+import { CONFIGURATION } from "../config/initialConfig";
 
 type StartEnd = "start" | "end";
 
@@ -18,7 +18,7 @@ type NumericRange<
       ARR[START] extends undefined ? ACC : ACC | ARR["length"]
     >;
 
-type Coord = NumericRange<0, typeof GRID_SIDE_LENGTH, []>;
+type Coord = NumericRange<0, typeof CONFIGURATION.NUM_SQUARES, []>;
 
 type Vector = [Coord, Coord];
 
