@@ -30,6 +30,8 @@ type Matrix = Row[];
 
 type StringifiedVector = `row${number}col${number}`;
 
+type AdjacencyList = Map<StringifiedVector, Map<StringifiedVector, number>>;
+
 export type {
   StartEnd,
   OnOff,
@@ -39,4 +41,5 @@ export type {
   StringifiedVector,
   SquareStatus,
   Coord,
+  AdjacencyList,
 };

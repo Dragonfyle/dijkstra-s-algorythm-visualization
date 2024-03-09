@@ -35,11 +35,17 @@ const initialMatrix = makeMatrixFromArray(initialArray, GRID_SIDE_LENGTH);
 function getBackgroundColor({ $status }: { $status: SquareStatus }) {
   switch ($status) {
     case 0:
-      return "gray";
+      return "darkgray";
     case 1:
       return "seagreen";
     case 2:
       return "red";
+    case 3:
+      return "gray";
+    case 4:
+      return "blue";
+    case 5:
+      return "blue";
   }
 }
 

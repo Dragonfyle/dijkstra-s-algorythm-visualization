@@ -1,5 +1,11 @@
 import { SQUARE_STATUS_MAP } from "../components/Board.utils";
-import { Matrix, StringifiedVector, Vector } from "../types/board.types";
+import { GRID_SIDE_LENGTH } from "../config/initialConfig";
+import {
+  AdjacencyList,
+  Matrix,
+  StringifiedVector,
+  Vector,
+} from "../types/board.types";
 
 function stringifyVector([row, col]: Vector) {
   const stringifiedVector: StringifiedVector = `row${row}col${col}`;
@@ -17,7 +23,7 @@ function parseVector(string: StringifiedVector) {
   return shape;
 }
 
-function checkNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
+function getNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
   const unitVectors = {
     left: [-1, 0],
     right: [1, 0],
@@ -55,20 +61,17 @@ function checkNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
 }
 
 function isVectorWithinBounds(vector: Vector) {
-  return vector.every((coord) => coord >= 0 && coord <= 29);
+  return vector.every((coord) => coord >= 0 && coord <= GRID_SIDE_LENGTH - 1);
 }
 
 function getAdjacencyList(boardMatrix: Matrix) {
-  const gridAdjacencyList = new Map<
-    StringifiedVector,
-    Map<StringifiedVector, number>
-  >();
+  const gridAdjacencyList: AdjacencyList = new Map();
 
   boardMatrix.map((row, rowIdx) =>
     row.map((_, colIdx) =>
       gridAdjacencyList.set(
         stringifyVector([rowIdx, colIdx] as Vector),
-        checkNeighbors(boardMatrix, [rowIdx, colIdx] as Vector)
+        getNeighbors(boardMatrix, [rowIdx, colIdx] as Vector)
       )
     )
   );
