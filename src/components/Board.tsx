@@ -1,70 +1,71 @@
-import React, { useEffect, useState } from "react";
+import Konva from "konva";
+import { useRef, useState } from "react";
 import {
   getBackgroundColor,
-  initialMatrix,
+  initialRectMap,
   SQUARE_STATUS_MAP,
 } from "./Board.utils";
 import { CONFIGURATION as CONF, defaults } from "../config/initialConfig";
-import { getAdjacencyList, stringifyVector } from "../utils/adjacencyList";
-import { Matrix, OnOff, StartEnd, Vector } from "../types/board.types";
+import { getAdjacencyList } from "../utils/adjacencyList";
+import { OnOff, SquareStatus, StartEnd } from "../types/board.types";
 import * as P from "./Board.parts";
 import useDijkstras from "../utils/dijkstras";
 import { Layer, Rect, Stage } from "react-konva";
 import { KonvaEventObject } from "konva/lib/Node";
 
 export default function Board() {
-  const [matrix, setMatrix] = useState<Matrix>(initialMatrix);
-  const [start, setStart] = useState<Vector>(defaults.StartPos);
-  const [end, setEnd] = useState<Vector>(defaults.EndPos);
-  const [adjacencyList, setAdjacencyList] = useState(getAdjacencyList(matrix));
-  const [version, setVersion] = useState(0);
+  const [rectMap, setRectMap] = useState(initialRectMap);
+  const start = useRef<number>(defaults.startPos);
+  const end = useRef<number>(defaults.endPos);
+  const adjacencyList = useRef(getAdjacencyList(rectMap));
   const [zoom, setZoom] = useState(1);
-
-  useDijkstras({
-    // matrix,
-    graph: adjacencyList,
-    start: stringifyVector(start),
-    // end: EN5D_NODE,
-    updateMatrix: setMatrix,
-    version,
+  const LayerRef = useRef<Konva.Layer>(null);
+  const isRunning = useDijkstras({
+    graph: adjacencyList.current,
+    start: start.current,
+    end: end.current,
+    LayerRef: LayerRef,
   });
 
-  function setStartEndPos([row, col]: Vector, method: StartEnd) {
+  function setStartEndPos(rectNumber: number, method: StartEnd) {
     const reverseRefMap = {
-      start: end,
-      end: start,
+      start: end.current,
+      end: start.current,
     };
 
-    const [currRow, currCol] = reverseRefMap[method];
+    //when trying to set start, this will be the end and vice versa
+    const otherEndRectNumber = reverseRefMap[method];
 
-    if (row === currRow && col === currCol) {
+    if (rectNumber === otherEndRectNumber) {
       return;
     }
-    updateMatrixStartEnd([row, col], method);
+
+    updateMatrixStartEnd(rectNumber, method);
   }
 
-  function updateMatrixStartEnd(array: Vector, method: StartEnd) {
+  function updateMatrixStartEnd(rectNumber: number, method: StartEnd) {
     const stateMap = {
-      start: start,
-      end: end,
+      start: start.current,
+      end: end.current,
     };
     const status = SQUARE_STATUS_MAP[method];
-    const [row, col] = array;
-    const [prevRow, prevCol] = stateMap[method];
+    const prevRectNumber = stateMap[method];
 
-    setMatrix((prev) => {
-      const previous = JSON.parse(JSON.stringify(prev));
-      previous[prevRow][prevCol] = 0;
-      previous[row][col] = status;
-
-      return previous;
+    setRectMap((prev) => {
+      const newRectMap = new Map(prev);
+      newRectMap.set(prevRectNumber, 0);
+      newRectMap.set(rectNumber, status);
+      return newRectMap;
     });
-    method === "end" ? setEnd([row, col]) : setStart([row, col]);
+
+    method === "end"
+      ? (end.current = rectNumber)
+      : (start.current = rectNumber);
   }
 
   function handleLeftClick(
     e: KonvaEventObject<MouseEvent>,
-    [rowIdx, colIdx]: Vector
+    rectNumber: number
   ) {
     e.evt.preventDefault();
     e.evt.stopPropagation();
@@ -86,18 +87,14 @@ export default function Board() {
 
     if (e.evt[buttonProperty] === primaryBtnId) {
       if (e.evt.ctrlKey) {
-        setSquaresOnOff([rowIdx, colIdx], "off");
-        setVersion(Math.random());
+        setSquaresOnOff(rectNumber, "off");
       } else if (e.evt.shiftKey) {
-        setSquaresOnOff([rowIdx, colIdx], "on");
-        setVersion(Math.random());
+        setSquaresOnOff(rectNumber, "on");
       } else {
-        setStartEndPos([rowIdx, colIdx], "start");
-        setVersion(Math.random());
+        setStartEndPos(rectNumber, "start");
       }
     } else if (e.evt[buttonProperty] === 2) {
-      setStartEndPos([rowIdx, colIdx], "end");
-      setVersion(Math.random());
+      setStartEndPos(rectNumber, "end");
     }
   }
 
@@ -106,53 +103,59 @@ export default function Board() {
     e.evt.stopPropagation();
   }
 
-  function setSquaresOnOff(array: Vector, method: OnOff) {
-    const [row, col] = array;
+  function setSquaresOnOff(rectNumber: number, method: OnOff) {
+    const requestedStatus =
+      method === "off" ? SQUARE_STATUS_MAP.off : SQUARE_STATUS_MAP.neutral;
 
-    setMatrix((prev) => {
-      if (prev[row][col] !== 3 && prev[row][col] !== 0) {
+    setRectMap((prev) => {
+      const previousStatus = rectMap.get(rectNumber);
+
+      if (previousStatus !== 3 && previousStatus !== 0) {
         return prev;
       }
-      const previous = JSON.parse(JSON.stringify(prev));
 
-      previous[row][col] = previous[row][col] =
-        method === "off" ? SQUARE_STATUS_MAP.off : SQUARE_STATUS_MAP.neutral;
+      const newRectMap = new Map(prev);
 
-      setAdjacencyList(getAdjacencyList(previous));
+      newRectMap.set(rectNumber, requestedStatus);
 
-      return previous;
+      adjacencyList.current = getAdjacencyList(newRectMap);
+
+      return newRectMap;
     });
-    setVersion(Math.random());
   }
 
   const squareConfig = {
     sideLength:
       (CONF.KONVA.STAGE.WIDTH /
-        (CONF.NUM_SQUARES * CONF.KONVA.SQUARE.SPACING_COEF)) *
+        (CONF.GRID_SIDE_LENGTH * CONF.KONVA.SQUARE.SPACING_COEF)) *
       zoom,
     posX: CONF.KONVA.SQUARE.SIDE_LENGTH * zoom,
     posY: CONF.KONVA.SQUARE.SIDE_LENGTH * zoom,
   };
 
-  function renderGrid(renderableMatrix: Matrix) {
-    return renderableMatrix.map((row, rowIdx) =>
-      row
-        .map((element, colIdx) => (
-          <Rect
-            fill={getBackgroundColor({ status: element })}
-            width={squareConfig.sideLength}
-            height={squareConfig.sideLength}
-            x={squareConfig.posX * colIdx}
-            y={squareConfig.posY * rowIdx}
-            // key={`${rowIdx}${colIdx}${element}`}
-            onMouseMove={(e) => handleLeftClick(e, [rowIdx, colIdx] as Vector)}
-            onClick={(e) => handleLeftClick(e, [rowIdx, colIdx] as Vector)}
-            // onMouseOver={(e) => handleMouseOver(e, [rowIdx, colIdx] as Vector)}
-            onContextMenu={(e) => handleRightClick(e)}
-          />
-        ))
-        .flat()
-    );
+  function renderGrid(rectMap: Map<number, SquareStatus>) {
+    const grid: JSX.Element[] = [];
+
+    rectMap.forEach((status, idx) => {
+      const color = getBackgroundColor({ status });
+
+      grid.push(
+        <Rect
+          id={`${idx}`}
+          fill={color}
+          width={squareConfig.sideLength}
+          height={squareConfig.sideLength}
+          x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH)}
+          y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH)}
+          key={`${idx}`}
+          onMouseMove={(e) => handleLeftClick(e, idx)}
+          onClick={(e) => handleLeftClick(e, idx)}
+          onContextMenu={(e) => handleRightClick(e)}
+        />
+      );
+    });
+
+    return grid;
   }
 
   function handleWheel(e: KonvaEventObject<WheelEvent>) {
@@ -164,10 +167,14 @@ export default function Board() {
     }
   }
 
-  useEffect(() => {
-    updateMatrixStartEnd(defaults.StartPos, "start");
-    updateMatrixStartEnd(defaults.EndPos, "end");
-  }, []);
+  function handleClear() {
+    LayerRef.current?.children.forEach((child) =>
+      child.setAttr(
+        "fill",
+        getBackgroundColor({ status: SQUARE_STATUS_MAP.neutral })
+      )
+    );
+  }
 
   return (
     <P.BoardWrapper>
@@ -177,8 +184,11 @@ export default function Board() {
         onWheel={(e) => handleWheel(e)}
         onContextMenu={(e) => handleRightClick(e)}
       >
-        <Layer>{...renderGrid(matrix)}</Layer>
+        <Layer ref={LayerRef}>{...renderGrid(rectMap)}</Layer>
       </Stage>
+      <P.StyledButton disabled={isRunning} onClick={handleClear}>
+        Clear
+      </P.StyledButton>
     </P.BoardWrapper>
   );
 }

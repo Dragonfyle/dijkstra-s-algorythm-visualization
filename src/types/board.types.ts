@@ -4,6 +4,8 @@ type StartEnd = "start" | "end";
 
 type OnOff = "on" | "off";
 
+type Direction = "left" | "right" | "up" | "down";
+
 type NumericRange<
   START extends number,
   END extends number,
@@ -18,7 +20,7 @@ type NumericRange<
       ARR[START] extends undefined ? ACC : ACC | ARR["length"]
     >;
 
-type Coord = NumericRange<0, typeof CONFIGURATION.NUM_SQUARES, []>;
+type Coord = NumericRange<0, typeof CONFIGURATION.GRID_SIDE_LENGTH, []>;
 
 type Vector = [Coord, Coord];
 
@@ -30,7 +32,7 @@ type Matrix = Row[];
 
 type StringifiedVector = `row${number}col${number}`;
 
-type AdjacencyList = Map<StringifiedVector, Map<StringifiedVector, number>>;
+type AdjacencyList = Map<number, Map<number, number>>;
 
 export type {
   StartEnd,
@@ -42,4 +44,5 @@ export type {
   SquareStatus,
   Coord,
   AdjacencyList,
+  Direction,
 };

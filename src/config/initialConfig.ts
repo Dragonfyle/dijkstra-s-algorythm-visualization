@@ -1,5 +1,3 @@
-import { Vector } from "../types/board.types";
-
 const _CONFIGURATION = Object.freeze({
   KONVA: Object.freeze({
     STAGE: Object.freeze({
@@ -11,7 +9,7 @@ const _CONFIGURATION = Object.freeze({
       SPACING_COEF: 1.3,
     }),
   }),
-  NUM_SQUARES: 50,
+  GRID_SIDE_LENGTH: 50,
   START_NODE: "row0col0",
   STATUS_COLORS: Object.freeze({
     0: "#999",
@@ -24,13 +22,10 @@ const _CONFIGURATION = Object.freeze({
 });
 
 const _defaults = Object.freeze({
-  StartPos: [0, 0] as Vector,
-  EndPos: [
-    _CONFIGURATION.NUM_SQUARES - 1,
-    _CONFIGURATION.NUM_SQUARES - 1,
-  ] as Vector,
-  endNode: `row${_CONFIGURATION.NUM_SQUARES - 1}col${
-    _CONFIGURATION.NUM_SQUARES - 1
+  startPos: 0,
+  endPos: _CONFIGURATION.GRID_SIDE_LENGTH ** 2 - 1,
+  endNode: `row${_CONFIGURATION.GRID_SIDE_LENGTH - 1}col${
+    _CONFIGURATION.GRID_SIDE_LENGTH - 1
   }`,
 });
 

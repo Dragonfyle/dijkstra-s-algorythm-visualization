@@ -1,5 +1,5 @@
-import { CONFIGURATION } from "../config/initialConfig";
-import { Coord, Matrix, Row, SquareStatus } from "../types/board.types";
+import { CONFIGURATION, defaults } from "../config/initialConfig";
+import { SquareStatus } from "../types/board.types";
 
 const SQUARE_STATUS_MAP = {
   neutral: 0,
@@ -8,32 +8,22 @@ const SQUARE_STATUS_MAP = {
   off: 3,
   visited: 4,
   path: 5,
-};
+} as const;
 
-function makeMatrixFromArray(array: Row, rowLength: Coord) {
-  return array.reduce(
-    (acc, el, idx) => {
-      if (idx % rowLength === 0 && idx) {
-        acc.currentRow += 1;
-      }
-
-      if (!acc.matrix[acc.currentRow]) {
-        acc.matrix[acc.currentRow] = [];
-      }
-
-      acc.matrix[acc.currentRow].unshift(el);
-
-      return acc;
-    },
-    { currentRow: 0, matrix: [] as Matrix }
-  ).matrix;
+function delay(delay: number) {
+  return new Promise((res) => setTimeout(res, delay));
 }
-const initialArray = Array(CONFIGURATION.NUM_SQUARES ** 2).fill(0);
 
-const initialMatrix = makeMatrixFromArray(
-  initialArray,
-  CONFIGURATION.NUM_SQUARES
-);
+const initialRectMap = new Map<number, SquareStatus>();
+
+(function populateMap() {
+  for (let i = 0; i < CONFIGURATION.GRID_SIDE_LENGTH ** 2; i++) {
+    initialRectMap.set(i, 0);
+  }
+
+  initialRectMap.set(defaults.startPos, SQUARE_STATUS_MAP.start);
+  initialRectMap.set(defaults.endPos, SQUARE_STATUS_MAP.end);
+})();
 
 function getBackgroundColor({ status }: { status: SquareStatus }) {
   switch (status) {
@@ -52,4 +42,4 @@ function getBackgroundColor({ status }: { status: SquareStatus }) {
   }
 }
 
-export { SQUARE_STATUS_MAP, initialMatrix, getBackgroundColor };
+export { SQUARE_STATUS_MAP, initialRectMap, getBackgroundColor, delay };

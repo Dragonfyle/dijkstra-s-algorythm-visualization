@@ -2,7 +2,8 @@ import { SQUARE_STATUS_MAP } from "../components/Board.utils";
 import { CONFIGURATION } from "../config/initialConfig";
 import {
   AdjacencyList,
-  Matrix,
+  Direction,
+  SquareStatus,
   StringifiedVector,
   Vector,
 } from "../types/board.types";
@@ -13,72 +14,62 @@ function stringifyVector([row, col]: Vector) {
   return stringifiedVector;
 }
 
-function parseVector(string: StringifiedVector) {
-  const matches = string.match(/\d+/g);
-  if (!matches) {
-    throw new Error("incorrect String format. Should be: 'row##col##'");
+function getNeighborNumber(rectNumber: number, direction: Direction) {
+  switch (direction) {
+    case "left":
+      return rectNumber % CONFIGURATION.GRID_SIDE_LENGTH === 0
+        ? null
+        : rectNumber - 1;
+    case "right":
+      return rectNumber % (CONFIGURATION.GRID_SIDE_LENGTH - 1) === 0
+        ? null
+        : rectNumber + 1;
+    case "up":
+      return rectNumber < CONFIGURATION.GRID_SIDE_LENGTH
+        ? null
+        : rectNumber - CONFIGURATION.GRID_SIDE_LENGTH;
+    case "down":
+      return rectNumber > CONFIGURATION.GRID_SIDE_LENGTH ** 2 - 1 - 50
+        ? null
+        : rectNumber + CONFIGURATION.GRID_SIDE_LENGTH;
   }
-  const shape = matches.map(Number);
-
-  return shape;
 }
 
-function getNeighbors(boardMatrix: Matrix, [row, col]: Vector) {
-  const unitVectors = {
-    left: [-1, 0],
-    right: [1, 0],
-    up: [0, -1],
-    down: [0, 1],
+function getNeighbors(rectMap: Map<number, SquareStatus>, rectNumber: number) {
+  const neghboringRects = {
+    left: getNeighborNumber(rectNumber, "left"),
+    right: getNeighborNumber(rectNumber, "right"),
+    up: getNeighborNumber(rectNumber, "up"),
+    down: getNeighborNumber(rectNumber, "down"),
   };
 
-  const addedVectors = {
-    left: [row + unitVectors.left[0], col + unitVectors.left[1]] as Vector,
-    right: [row + unitVectors.right[0], col + unitVectors.right[1]] as Vector,
-    up: [row + unitVectors.up[0], col + unitVectors.up[1]] as Vector,
-    down: [row + unitVectors.down[0], col + unitVectors.down[1]] as Vector,
-  };
+  const neighbors = new Map<number, number>();
 
-  const neighbors = new Map<StringifiedVector, number>();
+  for (const direction in neghboringRects) {
+    const neighborRectNumber = neghboringRects[direction as Direction];
 
-  for (const vector in addedVectors) {
-    const [row, col] = addedVectors[vector as keyof typeof addedVectors];
-
-    if (!isVectorWithinBounds([row, col])) {
-      continue;
-    }
-
-    if (boardMatrix[row][col] === SQUARE_STATUS_MAP.off) {
+    if (
+      !neighborRectNumber ||
+      rectMap.get(neighborRectNumber) === SQUARE_STATUS_MAP.off
+    ) {
       continue;
     } else {
-      neighbors.set(
-        stringifyVector([row, col]),
-        Math.floor(Math.random() * 10) + 1
-      );
+      // neighbors.set(neighborRectNumber, Math.floor(Math.random() * 10) + 1);
+      neighbors.set(neighborRectNumber, 1);
     }
   }
 
   return neighbors;
 }
 
-function isVectorWithinBounds(vector: Vector) {
-  return vector.every(
-    (coord) => coord >= 0 && coord <= CONFIGURATION.NUM_SQUARES - 1
-  );
-}
-
-function getAdjacencyList(boardMatrix: Matrix) {
+function getAdjacencyList(rectMap: Map<number, SquareStatus>) {
   const gridAdjacencyList: AdjacencyList = new Map();
 
-  boardMatrix.map((row, rowIdx) =>
-    row.map((_, colIdx) =>
-      gridAdjacencyList.set(
-        stringifyVector([rowIdx, colIdx] as Vector),
-        getNeighbors(boardMatrix, [rowIdx, colIdx] as Vector)
-      )
-    )
-  );
+  rectMap.forEach((_, idx) => {
+    gridAdjacencyList.set(idx, getNeighbors(rectMap, idx));
+  });
 
   return gridAdjacencyList;
 }
 
-export { getAdjacencyList, parseVector, stringifyVector };
+export { getAdjacencyList, stringifyVector };
