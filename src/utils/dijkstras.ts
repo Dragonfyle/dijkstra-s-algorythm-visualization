@@ -5,6 +5,7 @@ import {
   SQUARE_STATUS_MAP,
   getBackgroundColor,
 } from "../components/Board.utils";
+import { binaryHeap, heap } from "./binaryHeap";
 
 interface UseDijkstrasProps {
   graph: AdjacencyList;
@@ -76,7 +77,7 @@ export default function useDijkstras({
       };
       const isKeySupported = Object.values(supportedKeys).includes(e.key);
 
-      if (!isKeySupported || isRunning) return;
+      if (!isKeySupported || e.repeat || isRunning) return;
 
       e.preventDefault();
       setIsRunning(true);
@@ -87,62 +88,62 @@ export default function useDijkstras({
         end: number
       ) {
         const distances = new Map();
-        const visited = new Map();
+        const priorityQueue = binaryHeap();
+        const visited = new Set();
         const newPath = [];
-        let previousClosest = start;
 
-        const nodes = [...graph.keys()];
+        priorityQueue.insert({ rectNumber: start, distance: 0 });
 
-        nodes.forEach((node) => distances.set(node, Infinity));
-        distances.set(start, 0);
+        while (priorityQueue.length) {
+          const currentClosestNode = priorityQueue.poll();
+          const closestNodeDistance = currentClosestNode.distance;
 
-        while (nodes.length) {
-          nodes.sort((a, b) => distances.get(a) - distances.get(b));
-          const currentClosestNode = nodes.shift();
-          const colsestNodeDistance = distances.get(currentClosestNode);
+          if (!currentClosestNode || closestNodeDistance === Infinity) break;
 
-          if (!currentClosestNode || colsestNodeDistance === Infinity) break;
+          visited.add(currentClosestNode.rectNumber);
+          newPath.push(currentClosestNode.rectNumber);
 
-          visited.set(currentClosestNode, { previousClosest: previousClosest });
-          newPath.push(currentClosestNode);
-
-          if (currentClosestNode === end) {
+          if (currentClosestNode.rectNumber === end) {
             break;
           }
 
-          const edges = graph.get(currentClosestNode);
+          const edges = graph.get(currentClosestNode.rectNumber);
           if (!edges) continue;
           const neighborNodes = edges.entries();
 
           for (const [nodeNumber, edgeWeight] of neighborNodes) {
             if (visited.has(nodeNumber)) continue;
 
-            const newDistance = distances.get(currentClosestNode) + edgeWeight;
+            const newDistance = currentClosestNode.distance + edgeWeight;
 
-            if (newDistance < distances.get(nodeNumber)) {
-              distances.set(nodeNumber, newDistance);
+            const nodeObject = priorityQueue.getElement(nodeNumber);
+
+            if (!nodeObject) {
+              priorityQueue.insert({
+                rectNumber: nodeNumber,
+                distance: newDistance,
+              });
+            } else if (newDistance < distances.get(nodeNumber)) {
+              nodeObject.distance = newDistance;
             }
           }
-          previousClosest = currentClosestNode;
         }
         path.current = newPath;
-        console.log(visited);
-        // shortestPath.current = reconstructShortestPath(distances);
       }
 
+      console.time("dijkstras");
       dijkstras(graph, start, end);
+      console.timeEnd("dijkstras");
       runVisualization();
     },
-    [graph, start, end, isRunning, runVisualization, reconstructShortestPath]
+    [graph, start, end, isRunning, runVisualization]
   );
 
   useEffect(() => {
     window.addEventListener("keydown", keyboardListener);
-    window.addEventListener("keyup", keyboardListener);
 
     return () => {
       window.removeEventListener("keydown", keyboardListener);
-      window.removeEventListener("keyup", keyboardListener);
     };
   }, [keyboardListener]);
 

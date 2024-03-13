@@ -21,7 +21,7 @@ function getNeighborNumber(rectNumber: number, direction: Direction) {
         ? null
         : rectNumber - 1;
     case "right":
-      return rectNumber % (CONFIGURATION.GRID_SIDE_LENGTH - 1) === 0
+      return (rectNumber + 1) % CONFIGURATION.GRID_SIDE_LENGTH === 0
         ? null
         : rectNumber + 1;
     case "up":
@@ -54,8 +54,8 @@ function getNeighbors(rectMap: Map<number, SquareStatus>, rectNumber: number) {
     ) {
       continue;
     } else {
-      // neighbors.set(neighborRectNumber, Math.floor(Math.random() * 10) + 1);
-      neighbors.set(neighborRectNumber, 1);
+      neighbors.set(neighborRectNumber, Math.floor(Math.random() * 10) + 1);
+      // neighbors.set(neighborRectNumber, 1);
     }
   }
 
