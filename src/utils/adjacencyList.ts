@@ -29,7 +29,8 @@ function getNeighborNumber(rectNumber: number, direction: Direction) {
         ? null
         : rectNumber - CONFIGURATION.GRID_SIDE_LENGTH;
     case "down":
-      return rectNumber > CONFIGURATION.GRID_SIDE_LENGTH ** 2 - 1 - 50
+      return rectNumber + 1 >
+        CONFIGURATION.GRID_SIDE_LENGTH ** 2 - CONFIGURATION.GRID_SIDE_LENGTH
         ? null
         : rectNumber + CONFIGURATION.GRID_SIDE_LENGTH;
   }

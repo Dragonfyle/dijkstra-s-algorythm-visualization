@@ -5,7 +5,7 @@ import {
   SQUARE_STATUS_MAP,
   getBackgroundColor,
 } from "../components/Board.utils";
-import { binaryHeap, heap } from "./binaryHeap";
+import { binaryHeap } from "./binaryHeap";
 
 interface UseDijkstrasProps {
   graph: AdjacencyList;
@@ -24,8 +24,22 @@ export default function useDijkstras({
   LayerRef,
 }: UseDijkstrasProps) {
   const path = useRef<number[]>([]);
-  const shortestPath = useRef<(number | undefined)[]>([]);
+  // const shortestPath = useRef<(number | undefined)[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+
+  // const reconstructShortestPath = useCallback(function reconstructShortestPath(
+  // distances: Map<number, number>,
+  // startRectNumber
+  // ) {
+  // const rectNumbers = [...distances.keys()];
+  // const shortestPath = [];
+  //
+  // while (rectNumbers) {
+  // shortestPath.push(rectNumbers.pop());
+  // }
+  // return shortestPath;
+  // },
+  // []);
 
   const colorRect = useCallback(
     function colorRect(rectNumber: number) {
@@ -40,20 +54,6 @@ export default function useDijkstras({
     [LayerRef]
   );
 
-  const reconstructShortestPath = useCallback(function reconstructShortestPath(
-    distances: Map<number, number>,
-    startRectNumber
-  ) {
-    const rectNumbers = [...distances.keys()];
-    const shortestPath = [];
-
-    while (rectNumbers) {
-      shortestPath.push(rectNumbers.pop());
-    }
-    return shortestPath;
-  },
-  []);
-
   const runVisualization = useCallback(
     async function runVisualization() {
       const calculatedPath = path.current;
@@ -61,10 +61,11 @@ export default function useDijkstras({
       for (let i = 0, j = calculatedPath.length - 1; i <= j; i++) {
         setTimeout(() => {
           colorRect(calculatedPath[i]);
+
           if (i === j) {
             setIsRunning(false);
           }
-        }, Math.max(MIN_DELAY, DELAY_MULTIPLIER * i));
+        }, Math.max(MIN_DELAY, DELAY_MULTIPLIER * i * 50));
       }
     },
     [colorRect]
@@ -92,7 +93,7 @@ export default function useDijkstras({
         const visited = new Set();
         const newPath = [];
 
-        priorityQueue.insert({ rectNumber: start, distance: 0 });
+        priorityQueue.insert({ nodeNumber: start, distance: 0 });
 
         while (priorityQueue.length) {
           const currentClosestNode = priorityQueue.poll();
@@ -100,27 +101,25 @@ export default function useDijkstras({
 
           if (!currentClosestNode || closestNodeDistance === Infinity) break;
 
-          visited.add(currentClosestNode.rectNumber);
-          newPath.push(currentClosestNode.rectNumber);
+          visited.add(currentClosestNode.nodeNumber);
+          newPath.push(currentClosestNode.nodeNumber);
 
-          if (currentClosestNode.rectNumber === end) {
+          if (currentClosestNode.nodeNumber === end) {
             break;
           }
 
-          const edges = graph.get(currentClosestNode.rectNumber);
+          const edges = graph.get(currentClosestNode.nodeNumber)?.entries();
           if (!edges) continue;
-          const neighborNodes = edges.entries();
 
-          for (const [nodeNumber, edgeWeight] of neighborNodes) {
+          for (const [nodeNumber, edgeWeight] of edges) {
             if (visited.has(nodeNumber)) continue;
 
             const newDistance = currentClosestNode.distance + edgeWeight;
-
-            const nodeObject = priorityQueue.getElement(nodeNumber);
+            const nodeObject = priorityQueue.getNode(nodeNumber);
 
             if (!nodeObject) {
               priorityQueue.insert({
-                rectNumber: nodeNumber,
+                nodeNumber: nodeNumber,
                 distance: newDistance,
               });
             } else if (newDistance < distances.get(nodeNumber)) {
@@ -130,7 +129,6 @@ export default function useDijkstras({
         }
         path.current = newPath;
       }
-
       console.time("dijkstras");
       dijkstras(graph, start, end);
       console.timeEnd("dijkstras");

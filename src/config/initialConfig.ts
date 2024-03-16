@@ -5,12 +5,10 @@ const _CONFIGURATION = Object.freeze({
       HEIGHT: 650,
     }),
     SQUARE: Object.freeze({
-      SIDE_LENGTH: 11,
-      SPACING_COEF: 1.3,
+      SPACING_COEF: 1.1,
     }),
   }),
-  GRID_SIDE_LENGTH: 50,
-  START_NODE: "row0col0",
+  GRID_SIDE_LENGTH: 40,
   STATUS_COLORS: Object.freeze({
     0: "#999",
     1: "seagreen",
@@ -21,18 +19,19 @@ const _CONFIGURATION = Object.freeze({
   }),
 });
 
+const CONFIGURATION = new Proxy(_CONFIGURATION, {
+  set: () => {
+    throw new Error("configuration is readonly, do not mutate");
+  },
+});
+
 const _defaults = Object.freeze({
+  SIDE_LENGTH: CONFIGURATION.KONVA.STAGE.WIDTH / CONFIGURATION.GRID_SIDE_LENGTH,
   startPos: 0,
   endPos: _CONFIGURATION.GRID_SIDE_LENGTH ** 2 - 1,
   endNode: `row${_CONFIGURATION.GRID_SIDE_LENGTH - 1}col${
     _CONFIGURATION.GRID_SIDE_LENGTH - 1
   }`,
-});
-
-const CONFIGURATION = new Proxy(_CONFIGURATION, {
-  set: () => {
-    throw new Error("configuration is readonly, do not mutate");
-  },
 });
 
 const defaults = new Proxy(_defaults, {

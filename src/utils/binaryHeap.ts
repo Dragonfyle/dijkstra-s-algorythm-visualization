@@ -1,36 +1,52 @@
 interface HeapElement {
-  rectNumber: number;
+  nodeNumber: number;
   distance: number;
 }
 
 function binaryHeap() {
   const tree: HeapElement[] = [];
-  const ROOT = 0;
+  const idxMap: number[] = [];
+
+  const ROOT_IDX = 0;
 
   return {
-    insert(element: HeapElement) {
-      tree.push(element);
-      this.bubbleUp();
-    },
-
     get tree() {
       return tree;
     },
 
-    poll() {
-      const rootElement = tree[ROOT];
-      const lastIdx = tree.length - 1;
-      const lastElement = tree[lastIdx];
+    get length() {
+      return tree.length;
+    },
 
-      tree[ROOT] = lastElement;
-      tree.splice(-1);
-      this.bubbleDown();
+    insert(nodeObject: HeapElement) {
+      tree.push(nodeObject);
+      idxMap[nodeObject.nodeNumber] = tree.length - 1;
+      this.bubbleUp(tree.length - 1);
+    },
+
+    swap(idx1: number, idx2: number) {
+      const temp1 = tree[idx1];
+      const temp2 = tree[idx2];
+
+      tree[idx1] = tree[idx2];
+      tree[idx2] = temp1;
+      idxMap[temp1.nodeNumber] = idx2;
+      idxMap[temp2.nodeNumber] = idx1;
+    },
+
+    poll() {
+      const rootElement = tree[ROOT_IDX];
+      this.swap(ROOT_IDX, tree.length - 1);
+
+      idxMap[rootElement.nodeNumber] = -1;
+      tree.pop();
+      this.bubbleDown(ROOT_IDX);
 
       return rootElement;
     },
 
-    getElement(rectNumber: HeapElement["rectNumber"]) {
-      return tree.find((element) => element.rectNumber === rectNumber);
+    getNode(nodeNumber: HeapElement["nodeNumber"]) {
+      return tree[idxMap[nodeNumber]];
     },
 
     getParentIdx(elementIdx: number) {
@@ -46,64 +62,50 @@ function binaryHeap() {
       return childIdx;
     },
 
-    bubbleUp() {
-      let idx = tree.length - 1;
-      const element = tree[idx];
+    isWithinBounds(treeIdx: number) {
+      return treeIdx >= ROOT_IDX && treeIdx <= tree.length - 1;
+    },
 
-      while (idx > 0) {
-        const parentIdx = this.getParentIdx(idx);
-        const parent = tree[parentIdx];
+    isLess({ less, than }: { less: number; than: number }) {
+      return tree[less].distance < tree[than].distance;
+    },
 
-        if (element.distance < parent.distance) {
-          tree[parentIdx] = element;
-          tree[idx] = parent;
-          idx = parentIdx;
+    bubbleUp(treeIdx: number) {
+      while (treeIdx >= ROOT_IDX) {
+        const parentIdx = this.getParentIdx(treeIdx);
+        if (!this.isWithinBounds(parentIdx)) break;
+
+        if (tree[treeIdx].distance < tree[parentIdx].distance) {
+          this.swap(treeIdx, parentIdx);
+          treeIdx = parentIdx;
         } else {
           break;
         }
       }
     },
 
-    bubbleDown() {
-      let idx = ROOT;
-      const element = tree[idx];
-      const treeLength = tree.length;
+    bubbleDown(treeIdx: number) {
+      while (treeIdx <= tree.length - 1) {
+        const leftChildIdx = this.getChildIdx(treeIdx, "left");
+        const rightChildIdx = this.getChildIdx(treeIdx, "right");
+        let smallerChildIdx = leftChildIdx;
 
-      while (idx < treeLength) {
-        const leftChildIdx = this.getChildIdx(idx, "left");
-        const rightChildIdx = this.getChildIdx(idx, "right");
-        const leftChild = tree[leftChildIdx];
-        const rightChild = tree[rightChildIdx];
+        if (!this.isWithinBounds(leftChildIdx)) break;
 
-        let smallerChildIdx;
-
-        if (!leftChild && !rightChild) {
-          break;
-        } else if (!leftChild && rightChild) {
+        if (
+          this.isWithinBounds(rightChildIdx) &&
+          this.isLess({ less: rightChildIdx, than: leftChildIdx })
+        ) {
           smallerChildIdx = rightChildIdx;
-        } else if (!rightChild && leftChild) {
-          smallerChildIdx = leftChildIdx;
-        } else {
-          smallerChildIdx =
-            leftChild.distance < rightChild.distance
-              ? leftChildIdx
-              : rightChildIdx;
         }
 
-        const smallerChild = tree[smallerChildIdx];
-
-        if (element.distance > smallerChild.distance) {
-          tree[smallerChildIdx] = element;
-          tree[idx] = smallerChild;
-          idx = smallerChildIdx;
+        if (tree[treeIdx].distance > tree[smallerChildIdx].distance) {
+          this.swap(smallerChildIdx, treeIdx);
+          treeIdx = smallerChildIdx;
         } else {
           break;
         }
       }
-    },
-
-    get length() {
-      return tree.length;
     },
   };
 }

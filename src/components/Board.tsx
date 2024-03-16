@@ -2,6 +2,7 @@ import Konva from "konva";
 import { useRef, useState } from "react";
 import {
   getBackgroundColor,
+  getSquareConfig,
   initialRectMap,
   SQUARE_STATUS_MAP,
 } from "./Board.utils";
@@ -124,14 +125,7 @@ export default function Board() {
     });
   }
 
-  const squareConfig = {
-    sideLength:
-      (CONF.KONVA.STAGE.WIDTH /
-        (CONF.GRID_SIDE_LENGTH * CONF.KONVA.SQUARE.SPACING_COEF)) *
-      zoom,
-    posX: CONF.KONVA.SQUARE.SIDE_LENGTH * zoom,
-    posY: CONF.KONVA.SQUARE.SIDE_LENGTH * zoom,
-  };
+  const squareConfig = getSquareConfig();
 
   function renderGrid(rectMap: Map<number, SquareStatus>) {
     const grid: JSX.Element[] = [];
@@ -143,10 +137,10 @@ export default function Board() {
         <Rect
           id={`${idx}`}
           fill={color}
-          width={squareConfig.sideLength}
-          height={squareConfig.sideLength}
-          x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH)}
-          y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH)}
+          width={squareConfig.sideLength * zoom}
+          height={squareConfig.sideLength * zoom}
+          x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH) * zoom}
+          y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH) * zoom}
           key={`${idx}`}
           onMouseMove={(e) => handleLeftClick(e, idx)}
           onClick={(e) => handleLeftClick(e, idx)}
