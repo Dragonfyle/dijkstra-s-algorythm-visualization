@@ -17,6 +17,9 @@ const _CONFIGURATION = Object.freeze({
     4: "#66b",
     5: "blue",
   }),
+  TIMEOUT_DELAY: 1,
+  MIN_DELAY: 5,
+  DELAY_MULTIPLIER: 2,
 });
 
 const CONFIGURATION = new Proxy(_CONFIGURATION, {

@@ -1,21 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdjacencyList } from "../types/board.types";
-import Konva from "konva";
-import {
-  SQUARE_STATUS_MAP,
-  getBackgroundColor,
-} from "../components/Board.utils";
 import { binaryHeap } from "./binaryHeap";
-
-interface UseDijkstrasProps {
-  graph: AdjacencyList;
-  start: number;
-  end: number;
-  LayerRef: React.RefObject<Konva.Layer>;
-}
-
-const MIN_DELAY = 5;
-const DELAY_MULTIPLIER = 1;
+import { UseDijkstrasProps, runVisualization } from "./dijkstras.utils";
 
 export default function useDijkstras({
   graph,
@@ -24,52 +10,8 @@ export default function useDijkstras({
   LayerRef,
 }: UseDijkstrasProps) {
   const path = useRef<number[]>([]);
-  // const shortestPath = useRef<(number | undefined)[]>([]);
+  const parentList = useRef({});
   const [isRunning, setIsRunning] = useState(false);
-
-  // const reconstructShortestPath = useCallback(function reconstructShortestPath(
-  // distances: Map<number, number>,
-  // startRectNumber
-  // ) {
-  // const rectNumbers = [...distances.keys()];
-  // const shortestPath = [];
-  //
-  // while (rectNumbers) {
-  // shortestPath.push(rectNumbers.pop());
-  // }
-  // return shortestPath;
-  // },
-  // []);
-
-  const colorRect = useCallback(
-    function colorRect(rectNumber: number) {
-      if (!LayerRef.current || !LayerRef.current.children.length) return;
-
-      const [rect] = LayerRef.current.find(`#${rectNumber}`);
-      rect.setAttr(
-        "fill",
-        getBackgroundColor({ status: SQUARE_STATUS_MAP.visited })
-      );
-    },
-    [LayerRef]
-  );
-
-  const runVisualization = useCallback(
-    async function runVisualization() {
-      const calculatedPath = path.current;
-
-      for (let i = 0, j = calculatedPath.length - 1; i <= j; i++) {
-        setTimeout(() => {
-          colorRect(calculatedPath[i]);
-
-          if (i === j) {
-            setIsRunning(false);
-          }
-        }, Math.max(MIN_DELAY, DELAY_MULTIPLIER * i * 50));
-      }
-    },
-    [colorRect]
-  );
 
   const keyboardListener = useCallback(
     (e: KeyboardEvent) => {
@@ -92,6 +34,7 @@ export default function useDijkstras({
         const priorityQueue = binaryHeap();
         const visited = new Set();
         const newPath = [];
+        const previous = {};
 
         priorityQueue.insert({ nodeNumber: start, distance: 0 });
 
@@ -122,19 +65,29 @@ export default function useDijkstras({
                 nodeNumber: nodeNumber,
                 distance: newDistance,
               });
+              previous[nodeNumber] = currentClosestNode.nodeNumber;
             } else if (newDistance < distances.get(nodeNumber)) {
               nodeObject.distance = newDistance;
+              previous[nodeNumber] = currentClosestNode.nodeNumber;
             }
           }
         }
         path.current = newPath;
+        parentList.current = previous;
       }
       console.time("dijkstras");
       dijkstras(graph, start, end);
       console.timeEnd("dijkstras");
-      runVisualization();
+      runVisualization({
+        layerRef: LayerRef.current,
+        end,
+        start,
+        path,
+        parentArray: parentList,
+        onDone: () => setIsRunning(false),
+      });
     },
-    [graph, start, end, isRunning, runVisualization]
+    [graph, start, end, isRunning, LayerRef]
   );
 
   useEffect(() => {
