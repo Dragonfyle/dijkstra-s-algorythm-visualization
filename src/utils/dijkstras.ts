@@ -9,8 +9,8 @@ export default function useDijkstras({
   end,
   LayerRef,
 }: UseDijkstrasProps) {
-  const path = useRef<number[]>([]);
-  const parentList = useRef({});
+  const orderedVisitedNodes = useRef<number[]>([]);
+  const parentList = useRef<Map<number, number>>();
   const [isRunning, setIsRunning] = useState(false);
 
   const keyboardListener = useCallback(
@@ -34,7 +34,7 @@ export default function useDijkstras({
         const priorityQueue = binaryHeap();
         const visited = new Set();
         const newPath = [];
-        const previous = {};
+        const previous = new Map();
 
         priorityQueue.insert({ nodeNumber: start, distance: 0 });
 
@@ -60,32 +60,34 @@ export default function useDijkstras({
             const newDistance = currentClosestNode.distance + edgeWeight;
             const nodeObject = priorityQueue.getNode(nodeNumber);
 
-            if (!nodeObject) {
+            if (nodeObject === undefined) {
               priorityQueue.insert({
                 nodeNumber: nodeNumber,
                 distance: newDistance,
               });
-              previous[nodeNumber] = currentClosestNode.nodeNumber;
+              previous.set(nodeNumber, currentClosestNode.nodeNumber);
             } else if (newDistance < distances.get(nodeNumber)) {
               nodeObject.distance = newDistance;
-              previous[nodeNumber] = currentClosestNode.nodeNumber;
+              previous.set(nodeNumber, currentClosestNode.nodeNumber);
             }
           }
         }
-        path.current = newPath;
+        orderedVisitedNodes.current = newPath;
         parentList.current = previous;
       }
-      console.time("dijkstras");
+
       dijkstras(graph, start, end);
-      console.timeEnd("dijkstras");
-      runVisualization({
-        layerRef: LayerRef.current,
-        end,
-        start,
-        path,
-        parentArray: parentList,
-        onDone: () => setIsRunning(false),
-      });
+
+      if (LayerRef.current) {
+        runVisualization({
+          layerRef: LayerRef.current,
+          end,
+          start,
+          orderedVisitedNodes: orderedVisitedNodes.current,
+          parentArray: parentList.current,
+          onDone: () => setIsRunning(false),
+        });
+      }
     },
     [graph, start, end, isRunning, LayerRef]
   );

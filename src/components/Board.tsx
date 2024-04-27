@@ -1,25 +1,25 @@
 import Konva from "konva";
-import { useRef, useState } from "react";
+import { KonvaEventObject } from "konva/lib/Node";
+import { Layer, Rect, Stage } from "react-konva";
+import { useEffect, useRef, useState } from "react";
 import {
+  createNewRectMap,
   getBackgroundColor,
   getSquareConfig,
-  initialRectMap,
   SQUARE_STATUS_MAP,
 } from "./Board.utils";
 import { CONFIGURATION as CONF, defaults } from "../config/initialConfig";
 import { getAdjacencyList } from "../utils/adjacencyList";
 import { OnOff, SquareStatus, StartEnd } from "../types/board.types";
-import * as P from "./Board.parts";
 import useDijkstras from "../utils/dijkstras";
-import { Layer, Rect, Stage } from "react-konva";
-import { KonvaEventObject } from "konva/lib/Node";
+import { colorRect } from "../utils/dijkstras.utils";
+import * as P from "./Board.parts";
 
 export default function Board() {
-  const [rectMap, setRectMap] = useState(initialRectMap);
+  const [rectMap, setRectMap] = useState(createNewRectMap);
   const start = useRef<number>(defaults.startPos);
   const end = useRef<number>(defaults.endPos);
   const adjacencyList = useRef(getAdjacencyList(rectMap));
-  const [zoom, setZoom] = useState(1);
   const LayerRef = useRef<Konva.Layer>(null);
   const isRunning = useDijkstras({
     graph: adjacencyList.current,
@@ -27,8 +27,32 @@ export default function Board() {
     end: end.current,
     LayerRef: LayerRef,
   });
+  useEffect(() => {
+    setStartEndPos(start.current, "start");
+    setStartEndPos(end.current, "end");
+  }, []);
 
   function setStartEndPos(rectNumber: number, method: StartEnd) {
+    function updateMatrixStartEnd(rectNumber: number, method: StartEnd) {
+      const stateMap = {
+        start: start.current,
+        end: end.current,
+      };
+      const status = SQUARE_STATUS_MAP[method];
+      const prevRectNumber = stateMap[method];
+
+      setRectMap((prev) => {
+        const newRectMap = new Map(prev);
+        newRectMap.set(prevRectNumber, 0);
+        newRectMap.set(rectNumber, status);
+        return newRectMap;
+      });
+
+      method === "end"
+        ? (end.current = rectNumber)
+        : (start.current = rectNumber);
+    }
+
     const reverseRefMap = {
       start: end.current,
       end: start.current,
@@ -42,26 +66,6 @@ export default function Board() {
     }
 
     updateMatrixStartEnd(rectNumber, method);
-  }
-
-  function updateMatrixStartEnd(rectNumber: number, method: StartEnd) {
-    const stateMap = {
-      start: start.current,
-      end: end.current,
-    };
-    const status = SQUARE_STATUS_MAP[method];
-    const prevRectNumber = stateMap[method];
-
-    setRectMap((prev) => {
-      const newRectMap = new Map(prev);
-      newRectMap.set(prevRectNumber, 0);
-      newRectMap.set(rectNumber, status);
-      return newRectMap;
-    });
-
-    method === "end"
-      ? (end.current = rectNumber)
-      : (start.current = rectNumber);
   }
 
   function handleLeftClick(
@@ -137,10 +141,10 @@ export default function Board() {
         <Rect
           id={`${idx}`}
           fill={color}
-          width={squareConfig.sideLength * zoom}
-          height={squareConfig.sideLength * zoom}
-          x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH) * zoom}
-          y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH) * zoom}
+          width={squareConfig.sideLength}
+          height={squareConfig.sideLength}
+          x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH)}
+          y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH)}
           key={`${idx}`}
           onMouseMove={(e) => handleLeftClick(e, idx)}
           onClick={(e) => handleLeftClick(e, idx)}
@@ -152,22 +156,27 @@ export default function Board() {
     return grid;
   }
 
-  function handleWheel(e: KonvaEventObject<WheelEvent>) {
-    e.evt.preventDefault();
-    if (e.evt.deltaY > 0) {
-      setZoom((prev) => Math.max(1, prev - 0.3));
-    } else {
-      setZoom((prev) => Math.min(10, prev + 0.3));
-    }
-  }
-
   function handleClear() {
-    LayerRef.current?.children.forEach((child) =>
+    function resetRectMap() {
+      const newRectMap = createNewRectMap();
+      setRectMap(newRectMap);
+      adjacencyList.current = getAdjacencyList(newRectMap);
+      setStartEndPos(start.current, "start");
+      setStartEndPos(end.current, "end");
+    }
+
+    if (!LayerRef.current) return;
+
+    resetRectMap();
+    LayerRef.current.children.forEach((child) =>
       child.setAttr(
         "fill",
         getBackgroundColor({ status: SQUARE_STATUS_MAP.neutral })
       )
     );
+
+    colorRect(start.current, SQUARE_STATUS_MAP.start, LayerRef.current);
+    colorRect(end.current, SQUARE_STATUS_MAP.end, LayerRef.current);
   }
 
   return (
@@ -175,7 +184,6 @@ export default function Board() {
       <Stage
         height={CONF.KONVA.STAGE.HEIGHT}
         width={CONF.KONVA.STAGE.WIDTH}
-        onWheel={(e) => handleWheel(e)}
         onContextMenu={(e) => handleRightClick(e)}
       >
         <Layer ref={LayerRef}>{...renderGrid(rectMap)}</Layer>

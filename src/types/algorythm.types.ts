@@ -1,7 +1,16 @@
+import { Layer } from "konva/lib/Layer";
+
 type RectNumber = number;
 
-type ParentArray = {
-  [key: `${RectNumber}`]: RectNumber;
-};
+type ParentArray = Map<number, number>;
 
-export type { RectNumber, ParentArray };
+interface RunVisualization {
+  orderedVisitedNodes: RectNumber[];
+  end: RectNumber;
+  start: RectNumber;
+  parentArray: ParentArray | undefined;
+  layerRef: Layer | undefined;
+  onDone: () => void;
+}
+
+export type { RectNumber, ParentArray, RunVisualization };

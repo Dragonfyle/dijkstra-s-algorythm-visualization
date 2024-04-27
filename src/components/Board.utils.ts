@@ -14,16 +14,18 @@ function delay(delay: number) {
   return new Promise((res) => setTimeout(res, delay));
 }
 
-const initialRectMap = new Map<number, SquareStatus>();
+function createNewRectMap() {
+  const rectMap = new Map<number, SquareStatus>();
 
-(function populateMap() {
   for (let i = 0; i < CONF.GRID_SIDE_LENGTH ** 2; i++) {
-    initialRectMap.set(i, 0);
+    rectMap.set(i, 0);
   }
 
-  initialRectMap.set(defaults.startPos, SQUARE_STATUS_MAP.start);
-  initialRectMap.set(defaults.endPos, SQUARE_STATUS_MAP.end);
-})();
+  // rectMap.set(defaults.startPos, SQUARE_STATUS_MAP.start);
+  // rectMap.set(defaults.endPos, SQUARE_STATUS_MAP.end);
+
+  return rectMap;
+}
 
 function getBackgroundColor({ status }: { status: SquareStatus }) {
   switch (status) {
@@ -54,7 +56,7 @@ function getSquareConfig() {
 
 export {
   SQUARE_STATUS_MAP,
-  initialRectMap,
+  createNewRectMap,
   getBackgroundColor,
   delay,
   getSquareConfig,

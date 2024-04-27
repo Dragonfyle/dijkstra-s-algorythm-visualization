@@ -50,13 +50,12 @@ function getNeighbors(rectMap: Map<number, SquareStatus>, rectNumber: number) {
     const neighborRectNumber = neghboringRects[direction as Direction];
 
     if (
-      !neighborRectNumber ||
+      neighborRectNumber === null ||
       rectMap.get(neighborRectNumber) === SQUARE_STATUS_MAP.off
     ) {
       continue;
     } else {
       neighbors.set(neighborRectNumber, Math.floor(Math.random() * 10) + 1);
-      // neighbors.set(neighborRectNumber, 1);
     }
   }
 
