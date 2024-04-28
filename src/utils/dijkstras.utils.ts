@@ -23,7 +23,7 @@ function colorRect(rectNumber: number, color: SquareStatus, LayerRef: Layer) {
   if (!LayerRef || !LayerRef.children.length) return;
 
   const rect = LayerRef.findOne(`#${rectNumber}`);
-  if (!rect) return;
+  if (rect === undefined) return;
 
   rect.setAttr("fill", getBackgroundColor({ status: color }));
 }
@@ -85,13 +85,12 @@ async function runVisualization({
   onDone,
 }: RunVisualization) {
   if (!parentArray || !layerRef) return;
-  const allExceptStartEnd = layerRef.children.slice(1, -1);
   const visitedColor = getBackgroundColor({
     status: SQUARE_STATUS_MAP.visited,
   });
   const pathColor = getBackgroundColor({ status: SQUARE_STATUS_MAP.path });
 
-  allExceptStartEnd.forEach((child) => {
+  layerRef.children.forEach((child) => {
     const rectColor = child.getAttr("fill");
 
     if (rectColor === visitedColor || rectColor === pathColor) {

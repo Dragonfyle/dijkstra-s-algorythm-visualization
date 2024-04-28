@@ -18,11 +18,8 @@ function createNewRectMap() {
   const rectMap = new Map<number, SquareStatus>();
 
   for (let i = 0; i < CONF.GRID_SIDE_LENGTH ** 2; i++) {
-    rectMap.set(i, 0);
+    rectMap.set(i, SQUARE_STATUS_MAP.neutral);
   }
-
-  // rectMap.set(defaults.startPos, SQUARE_STATUS_MAP.start);
-  // rectMap.set(defaults.endPos, SQUARE_STATUS_MAP.end);
 
   return rectMap;
 }
