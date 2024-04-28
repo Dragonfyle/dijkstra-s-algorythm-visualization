@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Board from "./components/Board";
+import Controls from "./components/Controls/Controls";
 import MobileScreen from "./components/MobileScreen/MobileScreen";
 import { CONFIGURATION } from "./config/initialConfig";
 import "./App.css";
@@ -21,7 +22,12 @@ function App() {
 
   return (
     <>
-      {!isMobile && <Board />}
+      {!isMobile && (
+        <>
+          <Board />
+          <Controls />
+        </>
+      )}
       {isMobile && <MobileScreen />}
     </>
   );

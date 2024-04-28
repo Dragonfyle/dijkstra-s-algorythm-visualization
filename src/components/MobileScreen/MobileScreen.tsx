@@ -5,7 +5,7 @@ export default function MobileScreen() {
 
   return (
     <P.MobileScreen>
-      <h1>{infoText}</h1>
+      <p>{infoText}</p>
     </P.MobileScreen>
   );
 }
