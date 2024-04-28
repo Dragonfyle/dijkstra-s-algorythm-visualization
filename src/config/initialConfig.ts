@@ -20,6 +20,7 @@ const _CONFIGURATION = Object.freeze({
   TIMEOUT_DELAY: 1,
   MIN_DELAY: 5,
   DELAY_MULTIPLIER: 2,
+  MOBILE_WIDTH: 1024,
 });
 
 const CONFIGURATION = new Proxy(_CONFIGURATION, {

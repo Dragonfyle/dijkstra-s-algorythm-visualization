@@ -68,12 +68,8 @@ export default function Board() {
     updateMatrixStartEnd(rectNumber, method);
   }
 
-  function handleLeftClick(
-    e: KonvaEventObject<MouseEvent>,
-    rectNumber: number
-  ) {
+  function handleClick(e: KonvaEventObject<MouseEvent>, rectNumber: number) {
     e.evt.preventDefault();
-    e.evt.stopPropagation();
 
     let buttonProperty: "button" | "buttons" | undefined;
     let primaryBtnId: 0 | 1 | undefined;
@@ -105,7 +101,6 @@ export default function Board() {
 
   function handleRightClick(e: KonvaEventObject<MouseEvent>) {
     e.evt.preventDefault();
-    e.evt.stopPropagation();
   }
 
   function setSquaresOnOff(rectNumber: number, method: OnOff) {
@@ -146,8 +141,8 @@ export default function Board() {
           x={squareConfig.posX * (idx % CONF.GRID_SIDE_LENGTH)}
           y={squareConfig.posY * Math.floor(idx / CONF.GRID_SIDE_LENGTH)}
           key={`${idx}`}
-          onMouseMove={(e) => handleLeftClick(e, idx)}
-          onClick={(e) => handleLeftClick(e, idx)}
+          onMouseMove={(e) => handleClick(e, idx)}
+          onClick={(e) => handleClick(e, idx)}
           onContextMenu={(e) => handleRightClick(e)}
         />
       );
